@@ -11,15 +11,49 @@ const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 
+//locating user
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(
     function (position) {
       console.log(position);
-      const { latitude } = position.coords; //refer to destructuring
-      const { longitude } = position.coords; //refer to destructuring
+      const { latitude, longitude } = position.coords; //refer to destructuring. the name of const must be same as name of keys in object
+      //...being destructured
       console.log(
         `https://www.google.com/maps/@-${latitude},${longitude},2021m/data`
       );
+
+      const coordinates = [latitude, longitude];
+
+      const map = L.map('map').setView(coordinates, 13);
+
+      console.log(map);
+
+      //using leaflet library
+      L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      map.on('click', function (mapEvent) {
+        console.log(mapEvent);
+
+        const { lat, lng } = mapEvent.latlng; //the name of const must be same as name of keys in object
+        //...being destructured
+
+        L.marker([lat, lng])
+          .addTo(map)
+          .bindPopup(
+            L.popup({
+              maxWidth: 250, //check leaflet.js documentation
+              minWidth: 100, //check leaflet.js documentation
+              autoClose: false, //check leaflet.js documentation
+              closeOnClick: false,
+              className: 'running-popup',
+            })
+          )
+          .setPopupContent('Workout') //refer to leaflet.js documentation
+          .openPopup();
+      });
     },
     function () {
       alert('Could not get your position');
