@@ -5,6 +5,8 @@ class Workout {
 
   id = (Date.now() + '').slice(-10); //unique identifier
 
+  clicks = 0;
+
   constructor(coordinates, distance, duration) {
     this.coordinates = coordinates; // [latitude,longitude]
     this.distance = distance; // in km
@@ -13,11 +15,16 @@ class Workout {
 
   _setDescription() {
     // prettier-ignore
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const months = ['January', 'February', 'March', 'April',
+       'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
     this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${
       months[this.date.getMonth()]
     } ${this.date.getDate()}`;
+  }
+
+  click() {
+    this.clicks++;
   }
 }
 
@@ -70,6 +77,7 @@ const inputElevation = document.querySelector('.form__input--elevation');
 
 class App {
   #map;
+  #mapZoomLevel = 13;
   #mapEvent;
   #workouts = [];
   constructor() {
@@ -79,7 +87,9 @@ class App {
     //....and must therefor be reassigned to App object/class using bind method
 
     inputType.addEventListener('change', this._toggleElavationField);
-  } //the constructor function gets executed as soon as new child object is created
+
+    containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
+  } //the constructor function gets executed as soon as new child object 'app' is created
 
   _getPosition() {
     if (navigator.geolocation) {
@@ -101,7 +111,7 @@ class App {
 
     //in a regular function call, this keyword is set to undefined
 
-    this.#map = L.map('map').setView(coordinates, 13);
+    this.#map = L.map('map').setView(coordinates, this.#mapZoomLevel);
 
     //using leaflet library
     L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
@@ -149,6 +159,7 @@ class App {
   _newWorkout(event) {
     event.preventDefault(); //prevents loading of page after form submission
 
+    //input validation
     const validInputs = (...inputs) =>
       inputs.every(input => Number.isFinite(input));
 
@@ -274,10 +285,37 @@ class App {
             <span class="workout__unit">m</span>
           </div>
     </li> 
-`;
+   `;
     }
 
     form.insertAdjacentHTML('afterend', html);
+  }
+
+  _moveToPopup(event) {
+    const workoutElement = event.target.closest('.workout'); //targets parent element with class 'workout'
+
+    console.log(workoutElement);
+
+    if (!workoutElement) {
+      return; //guard clause
+    }
+
+    const workout = this.#workouts.find(
+      work => work.id === workoutElement.dataset.id
+    ); //array method to find workout with the given condition
+
+    console.log(workout);
+
+    this.#map.setView(workout.coordinates, this.#mapZoomLevel, {
+      animate: true,
+      pan: {
+        duration: 1,
+      },
+    }); //using leaflet library methods
+
+    //using the public interface
+    workout.click();
+    
   }
 }
 
