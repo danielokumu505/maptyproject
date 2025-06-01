@@ -81,8 +81,13 @@ class App {
   #mapEvent;
   #workouts = [];
   constructor() {
+    //get user's position
     this._getPosition(); //gets executed as soon as new child object is created
 
+    //get data from local storage
+    this._getLocalStorage();
+
+    //attach event handlers
     form.addEventListener('submit', this._newWorkout.bind(this)); //in the event handler, this keyword points to form
     //....and must therefor be reassigned to App object/class using bind method
 
@@ -121,6 +126,10 @@ class App {
 
     //handling clicks on map
     this.#map.on('click', this._showForm.bind(this));
+
+    this.#workouts.forEach(workout => {
+      this._renderWorkoutMarker(workout);
+    }); //the map has to load before workout marker is rendered on map.
   }
 
   _showForm(event) {
@@ -210,7 +219,6 @@ class App {
 
     //add new object to workout array
     this.#workouts.push(workout);
-    console.log(workout);
 
     //render workout on map as a marker
     this._renderWorkoutMarker(workout);
@@ -220,6 +228,10 @@ class App {
 
     //hide form
     this._hideForm();
+
+    //set local storage to all workouts
+
+    this._setLocalStorage();
   }
 
   _renderWorkoutMarker(workout) {
@@ -294,8 +306,6 @@ class App {
   _moveToPopup(event) {
     const workoutElement = event.target.closest('.workout'); //targets parent element with class 'workout'
 
-    console.log(workoutElement);
-
     if (!workoutElement) {
       return; //guard clause
     }
@@ -303,8 +313,6 @@ class App {
     const workout = this.#workouts.find(
       work => work.id === workoutElement.dataset.id
     ); //array method to find workout with the given condition
-
-    console.log(workout);
 
     this.#map.setView(workout.coordinates, this.#mapZoomLevel, {
       animate: true,
@@ -314,9 +322,32 @@ class App {
     }); //using leaflet library methods
 
     //using the public interface
-    workout.click();
-    
+    // workout.click();
   }
+
+  _setLocalStorage() {
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts)); //accepts second parameter as string
+  }
+
+  _getLocalStorage() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+    //note : //objects retrieved from local storage loose their prototype hence loose their prototype inheritance
+
+    if (!data) {
+      return;
+    } //guard clause if there is no data in the local storage
+
+    this.#workouts = data;
+
+    this.#workouts.forEach(workout => {
+      this._renderWorkout(workout);
+    }); //objects retrieved from local storage loose their prototype hence loose their prototype inheritance
+  }
+
+  reset() {
+    localStorage.removeItem('workouts'); //deletes local storage data
+    location.reload(); //reloads the current page
+  } //to reset application on the console
 }
 
 const app = new App();
